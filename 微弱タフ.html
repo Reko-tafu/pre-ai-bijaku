@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>プレ・タフミニ Web版</title>
+    <style>
+        /* 画面のデザイン */
+        body { font-family: sans-serif; background: #eceff1; padding: 20px; }
+        .chat-container { max-width: 500px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; }
+        .chat-box { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background: #f9f9f9; border-radius: 5px; }
+        .message { margin: 5px 0; padding: 8px 12px; border-radius: 15px; max-width: 80%; display: inline-block; clear: both; }
+        .user-msg { background: #0084ff; color: white; float: right; }
+        .ai-msg { background: #e5e5ea; color: black; float: left; }
+        .input-area { display: flex; }
+        input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px 0 0 5px; }
+        button { padding: 10px 20px; border: 1px solid #0084ff; background: #0084ff; color: white; border-radius: 0 5px 5px 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <h3 id="appTitle">プレ・タフミニ</h3>
+    <div id="chatBox" class="chat-box">
+        <div class="message ai-msg">プレ・タフミニ「起動したよ！お話ししながら、新しい言葉を教えてね！チャットを終わらせるときは、『終了』と入力してね！」</div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="メッセージを入力...">
+        <button onclick="sendMessage()">送信</button>
+    </div>
+</div>
+
+<script>
+    // 初期状態の脳みそ
+    let ai_brain = {
+        "こんにちは": ["こんにちは！", "ハロー！"],
+        "バイバイ": ["またね！", "バイバイ！"]
+    };
+
+    // user_name = input("あなたの名前を入力してね！:")
+    let user_name = prompt("あなたの名前を入力してね！:");
+    if (!user_name || user_name.trim() === "") {
+        user_name = "名無しさん"; 
+    }
+
+    // print("よろしく" + user_name + "!")
+    setTimeout(() => {
+        addMessage(`よろしく${user_name}!`, "ai-msg");
+    }, 300);
+
+    // 入力欄のヒントを「ねえ○○！なにかはなして！」にする
+    document.getElementById("userInput").placeholder = `ねえ${user_name}！なにかはなして！`;
+
+    // 状態管理用の変数
+    let isLearning = false;
+    let unknown_word = "";
+
+    // 送信ボタンを押した時（while True ループの代わりに、ボタンを押すたびにここが走る）
+    function sendMessage() {
+        let inputField = document.getElementById("userInput");
+        let user_input = inputField.value.trim(); 
+        if (user_input === "") return;
+
+        // 画面に自分の発言を表示
+        addMessage(user_input, "user-msg");
+        inputField.value = ""; 
+
+        // if user_input == "終了":
+        if (user_input === "終了") {
+            addMessage("プレ・タフミニ「楽しかった！学んだことは忘れないよ！」", "ai-msg");
+            inputField.disabled = true; // 入力欄をフリーズさせて終了を再現
+            return;
+        }
+
+        setTimeout(() => {
+            if (isLearning) {
+                // 【学習モードの後半戦】教えてもらった返事を登録する
+                ai_brain[unknown_word] = [user_input];
+                addMessage(`プレ・タフミニ「覚えたよ！『${unknown_word}』には『${user_input}』って返せばいいんだね！」`, "ai-msg");
+                isLearning = false; 
+            } else {
+                
+                // found_keyword = None
+                let found_keyword = null;
+
+                // for keyword in ai_brain:
+                for (let keyword in ai_brain) {
+                    // if keyword in user_input:
+                    if (user_input.includes(keyword)) {
+                        found_keyword = keyword; // 見つけたキーワードをキープ！
+                        break; // 1個見つかったらループを抜ける
+                    }
+                }
+
+                // if found_keyword is not None:
+                if (found_keyword !== null) {
+                    let replies = ai_brain[found_keyword];
+                    // random.choice(replies) をJavaScriptで再現
+                    let random_reply = replies[Math.floor(Math.random() * replies.length)];
+                    addMessage(`プレ・タフミニ「${random_reply}」`, "ai-msg");
+                } 
+                // else:（どのキーワードも含まれていなかったら学習モードへ）
+                else {
+                    addMessage(`プレ・タフミニ「知らない言葉だ,,。『${user_input}』って言われたら、なんて返せばいい？」`, "ai-msg");
+                    isLearning = true;
+                    unknown_word = user_input; // 次の入力で覚えるためにキープ
+                }
+            }
+        }, 500);
+    }
+
+    // 画面にメッセージを表示するための関数
+    function addMessage(text, className) {
+        let chatBox = document.getElementById("chatBox");
+        let msgDiv = document.createElement("div");
+        msgDiv.className = `message ${className}`;
+        msgDiv.innerText = text;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
